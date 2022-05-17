@@ -1,28 +1,45 @@
-var sampleQuestion = {
-    type: "image",
-    image: "images/sampleImage.jpeg",
-    incorrectAnswers: [
-        "YA KNOW 1",
-        "YA KNOW 2",
-        "YA KNOW 3",
-    ],
-    correctAnswer: "YA KNOW 4",
-};
-
 var currentAnswer = "";
-var currentProgress = 0;
-var questionList = [
-    sampleQuestion,
-    sampleQuestion,
-    sampleQuestion,
-    sampleQuestion
+var questionList = [{
+        type: "image",
+        image: "images/sampleImage.jpeg",
+        correctAnswer: "How To Fake Your Own Death",
+        incorrectAnswer: "How to Launder Money"
+    },
+    {
+        type: "image",
+        image: "images/sampleImage2.jpeg",
+        correctAnswer: "How to Get Mental Peace",
+        incorrectAnswer: "How to Make a Viral Tik Tok"
+    },
+    {
+        type: "image",
+        image: "images/sampleImage3.jpeg",
+        correctAnswer: "How to Estimate Portion Size",
+        incorrectAnswer: "How to Make Your Own Beer"
+    },
+    {
+        type: "image",
+        image: "images/sampleImage4.jpeg",
+        correctAnswer: "How to Order a Healthy Brunch",
+        incorrectAnswer: "How to Plate Your Food"
+    },
+    {
+        type: "image",
+        image: "images/sampleImage5.jpeg",
+        correctAnswer: "How to Eat a Poptart",
+        incorrectAnswer: "How to Use a Toaster"
+    }
 ];
+
+var answers = Array(questionList.length);
 var currentQuestionIndex = 0;
 
 
 
-function questionBuilder(question) {
+function questionBuilder(question, questionNumber) {
     var questionDiv;
+
+
     switch (question.type) {
         case "image":
             questionDiv = (imageQuestion(question));
@@ -31,76 +48,61 @@ function questionBuilder(question) {
     var answersDiv = $("<div>");
     answersDiv.addClass("answers");
     var allAnswers = [];
-    // Creates a div for each answer and adds it to the answersDiv
-    for (var i = 0; i < question.incorrectAnswers.length; i++) {
-        allAnswers.push(createAnswer(question.incorrectAnswers[i]));
-    }
-    allAnswers.push(createAnswer(question.correctAnswer));
-    // Shuffles the answers
-    allAnswers = shuffle(allAnswers);
-    // Adds the answers to the answersDiv
-    for (var i = 0; i < allAnswers.length; i++) {
-        answersDiv.append(allAnswers[i]);
-    }
+    allAnswers.push(createAnswer(question.correctAnswer, true));
+    allAnswers.push(createAnswer(question.incorrectAnswer, false));
+    // Picks a random number between 0 and 1
+    var randomIndex = Math.floor(Math.random() * allAnswers.length);
+    answersDiv.append(allAnswers[randomIndex]);
+    allAnswers.splice(randomIndex, 1);
+    answersDiv.append(allAnswers[0]);
     currentAnswer = question.correctAnswer;
+
     questionDiv.append(answersDiv);
 
-    $("#game").append(questionDiv);
+    questionDiv.data("questionNumber", questionNumber);
 
+    $("#game").append(questionDiv);
 }
 
-function createAnswer(answer) {
+function createAnswer(answer, isCorrect) {
     var answerDiv = $("<div>");
     answerDiv.addClass("answer");
     answerDiv.text(answer);
     answerDiv.attr("data-answer", answer);
-    answerDiv.on("click", function () {
-        checkAnswer(this);
-    });
+    if (isCorrect) {
+        answerDiv.on("click", correctAnswer);
+    } else {
+        answerDiv.on("click", incorrectAnswer);
+    }
     return answerDiv;
 }
 
-function shuffle(array) {
-    var currentIndex = array.length,
-        randomIndex;
 
-    // While there remain elements to shuffle.
-    while (currentIndex != 0) {
-
-        // Pick a remaining element.
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-
-        // And swap it with the current element.
-        [array[currentIndex], array[randomIndex]] = [
-            array[randomIndex], array[currentIndex]
-        ];
-    }
-
-    return array;
-}
 
 function imageQuestion(question) {
     var questionDiv = $("<div>");
     questionDiv.addClass("question").addClass("imageQuestion");
     var questionImage = $("<img>").addClass("questionImage");
     questionImage.attr("src", question.image);
-    questionDiv.append(questionImage);
+    var questionBackgroundImage = $("<div>").addClass("questionBackgroundImage");
+    questionBackgroundImage.css("background-image", "url(" + question.image + ")");
+    questionDiv.append(questionImage).prepend(questionBackgroundImage);
     return questionDiv;
 }
 
 function startGame(question) {
     $("#introScreen").addClass("closed");
-    $("#progressBar").removeClass("hidden");
-    currentProgress = 1;
+    $("#game").removeClass("hidden");
     for (var tempQuestion in questionList) {
         questionLabelBuilder(parseInt(tempQuestion) + 1);
-        questionBuilder(questionList[tempQuestion], "Question " + (parseInt(tempQuestion) + 1));
+        questionBuilder(questionList[tempQuestion], parseInt(tempQuestion) + 1);
+        answers[tempQuestion] = null;
     }
     $(".question").addClass("hidden");
     // Removes hidden from first question 
     $(".question").first().removeClass("hidden");
-    updateProgress();
+    $(".questionLabel").first().addClass("active");
+    $(".questionHeader").text("Question " + 1);
 }
 
 
@@ -110,6 +112,7 @@ function questionLabelBuilder(questionNumber) {
     questionLabel.text(questionNumber);
     questionLabel.data("question-number", questionNumber);
     questionLabel.on("click", switchToQuestionFromBar);
+
     $("#questionsContainer").append(questionLabel);
 }
 
@@ -118,6 +121,15 @@ function switchToQuestionFromBar() {
     var questionNumber = $(this).data("question-number");
     $(".question").addClass("hidden");
     $(".question").eq(questionNumber - 1).removeClass("hidden");
+    $(".questionLabel").removeClass("active");
+    $(".questionHeader").text("Question " + questionNumber);
+    $(this).addClass("active");
+
+    if (answers[questionNumber - 1] != null) {
+        $("#nextButton").removeClass("hidden");
+    } else {
+        $("#nextButton").addClass("hidden");
+    }
 }
 
 
@@ -140,36 +152,30 @@ function checkAnswer(answer) {
 
 }
 
-function updateProgress() {
-    var progressBar = $("#progressBarFill");
-    progressBar.css("--current-progress", (currentProgress / questionList.length));
-    var progress = $("#progress");
-    progress.text(currentProgress + "/" + questionList.length);
-    console.log(currentProgress / questionList.length);
-}
 
 function correctAnswer() {
-    console.log("Correct answer");
-    nextQuestion();
+    if (answers[$(this).parent().parent().data("questionNumber") - 1] != null)
+        return;
+    $(this).addClass("correctAnswer");
+    $(".questionLabel.active").addClass("correctAnswer");
+    $(this).parent().parent().addClass("answered");
+    answers[$(this).parent().parent().data("questionNumber") - 1] = true;
+    $("#nextButton").removeClass("hidden");
 }
 
 function incorrectAnswer() {
-    console.log("Incorrect answer");
-    nextQuestion();
+    if (answers[$(this).parent().parent().data("questionNumber") - 1] != null)
+        return;
+    $(this).addClass("incorrectAnswer");
+    // Gets the current question header and sets it to incorrect 
+    $(".questionLabel.active").addClass("incorrectAnswer");
+    $(this).parent().parent().addClass("answered");
+    answers[$(this).parent().parent().data("questionNumber") - 1] = false;
+    $("#nextButton").removeClass("hidden");
 }
 
 function nextQuestion(previousQuestionCorrect) {
-    // Removes any previous questions
-    $(".question").remove();
 
-    currentQuestionIndex++;
-    if (currentQuestionIndex >= questionList.length) {
-        endGame();
-        return;
-    }
-    currentProgress++;
-    updateProgress();
-    questionBuilder(questionList[currentQuestionIndex]);
 }
 
 function endGame() {

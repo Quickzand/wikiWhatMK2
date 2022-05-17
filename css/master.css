@@ -3,10 +3,13 @@
 
 :root {
     --main-background-color: #303030;
+    --main-frosted-background-color: rgba(30, 30, 30, 0.35);
     --button-font: 'Roboto Flex', sans-serif;
     --body-font: 'Poppins', sans-serif;
     --font-color: #fafafa;
     --main-accent-color: rgb(148, 183, 149);
+    --correct-answer-color: rgb(148, 183, 149, 0.5);
+    --incorrect-answer-color: rgb(230, 100, 100, 0.5);
     --secondary-accent-color: rgb(230, 238, 224);
 }
 
@@ -50,7 +53,7 @@ body {
     align-items: center;
     width: 100vw;
     height: 100vh;
-    z-index: 2;
+    z-index: 3;
 }
 
 #introScreen.closed {
@@ -75,6 +78,20 @@ body {
 #playButton:hover {
     filter: brightness(1.25);
     transform: scale(1.05);
+}
+
+#headerLogo {
+    height: max(80%, 2rem);
+    margin-right: min(2rem, 2vw);
+    margin-left: 0.2rem;
+}
+
+#gameHeader {
+    height: 3rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 0.25rem;
 }
 
 
@@ -102,51 +119,49 @@ body {
     position: fixed;
     bottom: 0;
     border-top: solid .1rem var(--font-color);
+    z-index: 1;
 
 }
 
-#progressBarFill {
-    height: 100%;
-    width: 100%;
-    --current-progress: 0;
-    transform: scaleX(var(--current-progress));
-    transform-origin: left;
-    background-color: var(--main-accent-color);
-    transition: all 0.5s ease-in-out;
-    opacity: 1;
-}
 
-#progressBar.hidden {
+#game.hidden {
     opacity: 0;
+    pointer-events: none;
 }
 
 .answer {
-    background-color: var(--main-accent-color);
-    width: 13rem;
-    height: 2.5rem;
-    border-radius: 2.5rem;
+    width: 100%;
+    height: 100%;
     display: grid;
     cursor: pointer;
-    margin-top: 2rem;
+    border: solid .1rem var(--font-color);
+    text-align: center;
     place-items: center;
+    font-size: 2.5rem;
+    background-color: var(--main-frosted-background-color);
+    -webkit-backdrop-filter: blur(15px);
+    transition: all 0.25s ease-in-out;
 }
 
 .answers {
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
+    /* flex-wrap: wrap; */
     font-weight: bold;
     font-size: 1.5rem;
-    justify-content: space-between;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    width: calc(100% - 4rem);
-    padding-bottom: 5rem;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
 .answer:hover {
-    filter: brightness(1.25);
-    transform: scale(1.05);
+    -webkit-backdrop-filter: blur(50px);
+
+}
+
+.question.answered .answer {
+    cursor: not-allowed;
+    -webkit-backdrop-filter: blur(15px);
 }
 
 .question {
@@ -154,13 +169,55 @@ body {
     flex-direction: column;
     justify-content: start;
     align-items: center;
-    height: 100%;
+    height: calc(100% - 5rem);
     width: 100%;
+
+}
+
+.questionBackgroundImage {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 200vw;
+    height: 200vh;
+    z-index: -1;
+    transform: translate(-50%, -50%);
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(25px);
+    animation: backgroundImageAnimation 100s ease-in-out forwards infinite;
+}
+
+@keyframes backgroundImageAnimation {
+    0% {
+        transform: translate(-50%, -50%);
+    }
+
+    25% {
+        transform: translate(-60%, -50%);
+    }
+
+    50% {
+        transform: translate(-40%, -60%);
+    }
+
+    75% {
+        transform: translate(-60%, -40%);
+    }
+
+
+
+    100% {
+        transform: translate(-50%, -50%);
+    }
 }
 
 .questionImage {
     max-height: 30rem;
-    margin-top: 3rem;
+    box-shadow: 0 0 1rem 0.25rem rgba(0, 0, 0, 0.35);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
     max-width: 100%;
 }
 
@@ -181,10 +238,27 @@ body {
     place-items: center;
     border-right: solid .1rem var(--font-color);
     border-left: solid .1rem var(--font-color);
+    background-color: var(--main-frosted-background-color);
+    -webkit-backdrop-filter: blur(15px);
     border-collapse: collapse;
     height: 100%;
     width: 100%;
     cursor: pointer;
+    transition: all 0.25s ease-in-out;
+}
+
+.questionLabel.active {
+    outline: solid white 0.15rem;
+    z-index: 1;
+    border-bottom: solid 0.5rem var(--font-color);
+    height: calc(100% - 0.5rem);
+    position: relative;
+}
+
+.questionLabel:hover:not(.active) {
+    border-bottom: solid 0.25rem var(--font-color);
+    height: calc(100% - 0.25rem);
+    -webkit-backdrop-filter: blur(50px);
 }
 
 .question.hidden {
@@ -228,4 +302,62 @@ body {
     font-weight: 200;
     margin-bottom: 0.5rem;
 
+}
+
+.questionHeader {
+    font-size: 2.5rem;
+    margin-top: 0.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-shadow: rgba(0, 0, 0, 0.55) 0 0 1rem;
+    font-family: var(--button-font);
+    white-space: nowrap;
+
+}
+
+
+.correctAnswer {
+    background-color: var(--correct-answer-color);
+}
+
+.incorrectAnswer {
+    background-color: var(--incorrect-answer-color);
+}
+
+#nextButtonContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: end;
+}
+
+#nextButton {
+    cursor: pointer;
+    font-size: 1.5rem;
+    border-radius: 1rem;
+    height: 100%;
+    padding-right: 1rem;
+    white-space: nowrap;
+    padding-left: 1rem;
+    font-weight: bold;
+    font-family: var(--button-font);
+    background-color: var(--main-accent-color);
+    transition: all 0.25s ease-in-out;
+    clip-path: polygon(0% 0%, 100% 0, 100% 50%, 100% 100%, 0% 100%);
+    margin-right: 0.1rem;
+    margin-left: 0.5rem;
+}
+
+#nextButton:hover {
+    clip-path: polygon(0% 0%, 95% 0, 100% 50%, 95% 100%, 0% 100%);
+}
+
+#nextButton.hidden {
+    display: none;
+}
+
+@media screen and (max-width: 800px) {
+    :root {
+        font-size: 12px;
+    }
 }
